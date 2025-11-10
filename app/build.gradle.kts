@@ -60,6 +60,9 @@ dependencies {
     implementation("androidx.compose.material3:material3")        // ✅ Material3 tanpa versi manual
     implementation("androidx.compose.ui:ui-text:1.7.0")
     implementation("androidx.navigation:navigation-compose:2.7.4")
+    // Moshi untuk JSON
+    implementation("com.squareup.moshi:moshi:1.15.0")
+    implementation("com.squareup.moshi:moshi-kotlin:1.15.0")
 
 
     debugImplementation("androidx.compose.ui:ui-tooling")

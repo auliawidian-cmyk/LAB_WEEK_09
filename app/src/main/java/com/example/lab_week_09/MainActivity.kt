@@ -27,6 +27,8 @@ import com.example.lab_week_09.ui.theme.LAB_WEEK_09Theme
 import com.example.lab_week_09.ui.theme.OnBackgroundTitleText
 import com.example.lab_week_09.ui.theme.OnBackgroundItemText
 import com.example.lab_week_09.ui.theme.PrimaryTextButton
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,7 +51,7 @@ class MainActivity : ComponentActivity() {
 // Data class Student
 data class Student(var name: String)
 
-// 🔹 Root Composable (navigation graph)
+// Root composable (navigation graph)
 @Composable
 fun App(navController: NavHostController) {
     NavHost(
@@ -57,8 +59,8 @@ fun App(navController: NavHostController) {
         startDestination = "home"
     ) {
         composable("home") {
-            Home { listAsString ->
-                navController.navigate("resultContent/?listData=$listAsString")
+            Home { jsonData ->
+                navController.navigate("resultContent/?listData=$jsonData")
             }
         }
         composable(
@@ -85,6 +87,11 @@ fun Home(navigateFromHomeToResult: (String) -> Unit) {
 
     var inputField by remember { mutableStateOf(Student("")) }
 
+    // Moshi instance
+    val moshi = Moshi.Builder().build()
+    val type = Types.newParameterizedType(List::class.java, Student::class.java)
+    val adapter = moshi.adapter<List<Student>>(type)
+
     HomeContent(
         listData = listData,
         inputField = inputField,
@@ -96,12 +103,13 @@ fun Home(navigateFromHomeToResult: (String) -> Unit) {
             }
         },
         navigateFromHomeToResult = {
-            navigateFromHomeToResult(listData.toList().toString())
+            val json = adapter.toJson(listData) 
+            navigateFromHomeToResult(json)
         }
     )
 }
 
-// 🔹 Home Content
+// 🔹 HomeContent
 @Composable
 fun HomeContent(
     listData: SnapshotStateList<Student>,
@@ -151,9 +159,19 @@ fun HomeContent(
     }
 }
 
-// 🔹 Result Page
+// 🔹 ResultContent Page
 @Composable
 fun ResultContent(listData: String) {
+    val moshi = Moshi.Builder().build()
+    val type = Types.newParameterizedType(List::class.java, Student::class.java)
+    val adapter = moshi.adapter<List<Student>>(type)
+
+    val studentList = try {
+        adapter.fromJson(listData) ?: emptyList()
+    } catch (e: Exception) {
+        emptyList()
+    }
+
     Column(
         modifier = Modifier
             .padding(16.dp)
@@ -161,7 +179,12 @@ fun ResultContent(listData: String) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         OnBackgroundTitleText(text = "Result Page")
-        OnBackgroundItemText(text = listData)
+
+        LazyColumn {
+            items(studentList) { student ->
+                OnBackgroundItemText(text = student.name)
+            }
+        }
     }
 }
 
