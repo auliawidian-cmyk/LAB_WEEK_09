@@ -8,21 +8,22 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.lab_week_09.ui.theme.LAB_WEEK_09Theme
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.input.KeyboardType
+import com.example.lab_week_09.ui.theme.LAB_WEEK_09Theme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,40 +47,86 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+// Data model Student (Part 2)
+data class Student(var name: String)
+
 @Composable
 fun Home(modifier: Modifier = Modifier) {
-    // contoh state sederhana untuk TextField
-    val (text, setText) = remember { mutableStateOf("") }
-
-    // Column untuk layout vertikal
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        // judul (ambil dari strings.xml)
-        Text(text = stringResource(id = R.string.list_title), style = MaterialTheme.typography.titleLarge)
-
-        // input contoh
-        TextField(
-            value = text,
-            onValueChange = setText,
-            modifier = Modifier.padding(top = 8.dp)
+    // mutable state list of Student
+    val listData = remember {
+        mutableStateListOf(
+            Student("Tanu"),
+            Student("Tina"),
+            Student("Tono")
         )
+    }
 
-        // tombol contoh menambahkan (fungsi kosong untuk demonstrasi)
-        Button(onClick = { /* TODO: tambahkan aksi */ }, modifier = Modifier.padding(top = 8.dp)) {
-            Text(text = stringResource(id = R.string.button_click))
+    // mutable state for input field
+    var inputField by remember { mutableStateOf(Student("")) }
+
+    // panggil HomeContent (child) -- parent mengontrol state & handler
+    HomeContent(
+        listData = listData,
+        inputField = inputField,
+        onInputValueChange = { input -> inputField = inputField.copy(name = input) },
+        onButtonClick = {
+            // validasi, jangan tambahkan jika kosong / hanya whitespace
+            if (inputField.name.isNotBlank()) {
+                listData.add(inputField)
+                inputField = Student("") // reset input
+            }
+        },
+        modifier = modifier
+    )
+}
+
+@Composable
+fun HomeContent(
+    listData: SnapshotStateList<Student>,
+    inputField: Student,
+    onInputValueChange: (String) -> Unit,
+    onButtonClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(modifier = modifier) {
+        item {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // gunakan string resource dari modul (pastikan strings.xml ada)
+                Text(
+                    text = stringResource(id = R.string.enter_item),
+                    style = MaterialTheme.typography.titleLarge
+                )
+
+                TextField(
+                    value = inputField.name,
+                    onValueChange = { onInputValueChange(it) },
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+
+
+                Button(
+                    onClick = { onButtonClick() },
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    Text(text = stringResource(id = R.string.button_click))
+                }
+            }
         }
 
-        // contoh daftar sederhana (LazyColumn)
-        LazyColumn(modifier = Modifier.padding(top = 12.dp)) {
-            // contoh statis — nanti ganti dengan items(list)
-            item {
-                Text(text = "Tanu")
-                Text(text = "Tina")
-                Text(text = "Tono")
+        // tampilkan semua item dari listData
+        items(listData) { student ->
+            Column(
+                modifier = Modifier
+                    .padding(vertical = 4.dp)
+                    .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(text = student.name)
             }
         }
     }
