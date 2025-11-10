@@ -4,17 +4,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
@@ -22,8 +15,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import com.example.lab_week_09.ui.theme.LAB_WEEK_09Theme
+import com.example.lab_week_09.ui.theme.OnBackgroundTitleText
+import com.example.lab_week_09.ui.theme.OnBackgroundItemText
+import com.example.lab_week_09.ui.theme.PrimaryTextButton
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,9 +33,8 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    // Scaffold untuk layout dasar (toolbar / floating action nanti)
+                    // Scaffold bisa dipakai kalau mau tambah appbar nanti
                     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                        // panggil Home dan teruskan padding
                         Home(modifier = Modifier.padding(innerPadding))
                     }
                 }
@@ -47,12 +43,12 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// Data model Student (Part 2)
+// Data model Student
 data class Student(var name: String)
 
 @Composable
 fun Home(modifier: Modifier = Modifier) {
-    // mutable state list of Student
+    // Daftar student yang akan ditampilkan
     val listData = remember {
         mutableStateListOf(
             Student("Tanu"),
@@ -61,16 +57,16 @@ fun Home(modifier: Modifier = Modifier) {
         )
     }
 
-    // mutable state for input field
+    // State untuk input field
     var inputField by remember { mutableStateOf(Student("")) }
 
-    // panggil HomeContent (child) -- parent mengontrol state & handler
+    // HomeContent memegang UI utama
     HomeContent(
         listData = listData,
         inputField = inputField,
         onInputValueChange = { input -> inputField = inputField.copy(name = input) },
         onButtonClick = {
-            // validasi, jangan tambahkan jika kosong / hanya whitespace
+            // Hanya tambahkan jika input tidak kosong
             if (inputField.name.isNotBlank()) {
                 listData.add(inputField)
                 inputField = Student("") // reset input
@@ -92,33 +88,32 @@ fun HomeContent(
         item {
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
+                    .padding(16.dp)
+                    .fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // gunakan string resource dari modul (pastikan strings.xml ada)
-                Text(
-                    text = stringResource(id = R.string.enter_item),
-                    style = MaterialTheme.typography.titleLarge
-                )
+                // Gunakan title kustom dari Elements.kt
+                OnBackgroundTitleText(text = stringResource(id = R.string.enter_item))
 
                 TextField(
                     value = inputField.name,
-                    onValueChange = { onInputValueChange(it) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                    onValueChange = {
+                        onInputValueChange(it)
+                    },
                     modifier = Modifier.padding(top = 8.dp)
                 )
 
-
-                Button(
-                    onClick = { onButtonClick() },
-                    modifier = Modifier.padding(top = 8.dp)
+                // Gunakan tombol kustom dari Elements.kt
+                PrimaryTextButton(
+                    text = stringResource(id = R.string.button_click)
                 ) {
-                    Text(text = stringResource(id = R.string.button_click))
+                    onButtonClick()
                 }
             }
         }
 
-        // tampilkan semua item dari listData
+        // Tampilkan setiap item dari listData
         items(listData) { student ->
             Column(
                 modifier = Modifier
@@ -126,7 +121,8 @@ fun HomeContent(
                     .fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = student.name)
+                // Gunakan item text kustom dari Elements.kt
+                OnBackgroundItemText(text = student.name)
             }
         }
     }
