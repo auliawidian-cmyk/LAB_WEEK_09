@@ -7,16 +7,22 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import androidx.navigation.NavType
 import com.example.lab_week_09.ui.theme.LAB_WEEK_09Theme
 import com.example.lab_week_09.ui.theme.OnBackgroundTitleText
 import com.example.lab_week_09.ui.theme.OnBackgroundItemText
@@ -28,27 +34,47 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             LAB_WEEK_09Theme {
-                // Surface sebagai container utama
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    // Scaffold bisa dipakai kalau mau tambah appbar nanti
-                    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                        Home(modifier = Modifier.padding(innerPadding))
-                    }
+                    val navController = rememberNavController()
+                    App(navController = navController)
                 }
             }
         }
     }
 }
 
-// Data model Student
+// Data class Student
 data class Student(var name: String)
 
+// 🔹 Root Composable (navigation graph)
 @Composable
-fun Home(modifier: Modifier = Modifier) {
-    // Daftar student yang akan ditampilkan
+fun App(navController: NavHostController) {
+    NavHost(
+        navController = navController,
+        startDestination = "home"
+    ) {
+        composable("home") {
+            Home { listAsString ->
+                navController.navigate("resultContent/?listData=$listAsString")
+            }
+        }
+        composable(
+            "resultContent/?listData={listData}",
+            arguments = listOf(navArgument("listData") {
+                type = NavType.StringType
+            })
+        ) {
+            ResultContent(it.arguments?.getString("listData").orEmpty())
+        }
+    }
+}
+
+// 🔹 Home Page
+@Composable
+fun Home(navigateFromHomeToResult: (String) -> Unit) {
     val listData = remember {
         mutableStateListOf(
             Student("Tanu"),
@@ -57,34 +83,34 @@ fun Home(modifier: Modifier = Modifier) {
         )
     }
 
-    // State untuk input field
     var inputField by remember { mutableStateOf(Student("")) }
 
-    // HomeContent memegang UI utama
     HomeContent(
         listData = listData,
         inputField = inputField,
         onInputValueChange = { input -> inputField = inputField.copy(name = input) },
         onButtonClick = {
-            // Hanya tambahkan jika input tidak kosong
             if (inputField.name.isNotBlank()) {
                 listData.add(inputField)
-                inputField = Student("") // reset input
+                inputField = Student("")
             }
         },
-        modifier = modifier
+        navigateFromHomeToResult = {
+            navigateFromHomeToResult(listData.toList().toString())
+        }
     )
 }
 
+// 🔹 Home Content
 @Composable
 fun HomeContent(
     listData: SnapshotStateList<Student>,
     inputField: Student,
     onInputValueChange: (String) -> Unit,
     onButtonClick: () -> Unit,
-    modifier: Modifier = Modifier
+    navigateFromHomeToResult: () -> Unit
 ) {
-    LazyColumn(modifier = modifier) {
+    LazyColumn {
         item {
             Column(
                 modifier = Modifier
@@ -92,28 +118,26 @@ fun HomeContent(
                     .fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Gunakan title kustom dari Elements.kt
                 OnBackgroundTitleText(text = stringResource(id = R.string.enter_item))
 
                 TextField(
                     value = inputField.name,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                    onValueChange = {
-                        onInputValueChange(it)
-                    },
+                    onValueChange = { onInputValueChange(it) },
                     modifier = Modifier.padding(top = 8.dp)
                 )
 
-                // Gunakan tombol kustom dari Elements.kt
-                PrimaryTextButton(
-                    text = stringResource(id = R.string.button_click)
-                ) {
-                    onButtonClick()
+                Row {
+                    PrimaryTextButton(text = stringResource(id = R.string.button_click)) {
+                        onButtonClick()
+                    }
+                    PrimaryTextButton(text = stringResource(id = R.string.button_navigate)) {
+                        navigateFromHomeToResult()
+                    }
                 }
             }
         }
 
-        // Tampilkan setiap item dari listData
         items(listData) { student ->
             Column(
                 modifier = Modifier
@@ -121,10 +145,23 @@ fun HomeContent(
                     .fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Gunakan item text kustom dari Elements.kt
                 OnBackgroundItemText(text = student.name)
             }
         }
+    }
+}
+
+// 🔹 Result Page
+@Composable
+fun ResultContent(listData: String) {
+    Column(
+        modifier = Modifier
+            .padding(16.dp)
+            .fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        OnBackgroundTitleText(text = "Result Page")
+        OnBackgroundItemText(text = listData)
     }
 }
 
@@ -132,6 +169,6 @@ fun HomeContent(
 @Composable
 fun GreetingPreview() {
     LAB_WEEK_09Theme {
-        Home()
+        Home {}
     }
 }

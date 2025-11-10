@@ -59,6 +59,7 @@ dependencies {
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.material3:material3")        // ✅ Material3 tanpa versi manual
     implementation("androidx.compose.ui:ui-text:1.7.0")
+    implementation("androidx.navigation:navigation-compose:2.7.4")
 
 
     debugImplementation("androidx.compose.ui:ui-tooling")
